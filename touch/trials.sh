@@ -79,14 +79,22 @@ while (( tries[holder] < N || tries[table] < N )); do
     if [[ $task == table && $loc == pad ]]; then out=$(A kpick home); fi
     if [[ -n ${out:-} ]]; then
         if echo "$out" | grep -q "let it cool"; then say "  shoulder warm: cooling 5 min"; A rest >/dev/null; sleep 300; A clear >/dev/null; continue; fi
-        if ! echo "$out" | grep -q "KPICK SUCCEEDED"; then
+        # a holder-A wall catch falls back to a pad place, which also logs KPICK SUCCEEDED (v6 trial 2, 2026-11-06)
+        if ! echo "$out" | grep -q "KPICK SUCCEEDED" || echo "$out" | grep -q "HOLDER FALLBACK"; then
             say "  setup pick for '$task' failed: $(echo "$out" | grep -E "HALT|FROZEN" | tail -1 | cut -c1-120)"
             setup_fails=$((${setup_fails:-0} + 1))
             if (( setup_fails >= 4 )); then say "STOP: $setup_fails setup picks failed in a row"; break; fi
             A rest >/dev/null; A clear >/dev/null; unset out; continue
         fi
-        unset out; setup_fails=0
+        unset out
         read -r loc x y < <(where_plate)
+        if [[ $task == holder && $loc != pad ]] || [[ $task == table && $loc != holder ]]; then
+            say "  setup for '$task' left the plate at $loc ($x, $y): retrying"
+            setup_fails=$((${setup_fails:-0} + 1))
+            if (( setup_fails >= 4 )); then say "STOP: $setup_fails setup picks failed in a row"; break; fi
+            A rest >/dev/null; A clear >/dev/null; continue
+        fi
+        setup_fails=0
     fi
     A rest >/dev/null; A record off >/dev/null
     start="$loc $x $y"
