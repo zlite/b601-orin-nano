@@ -35,7 +35,8 @@ job = api.run_uv_job(
     "/w/training/hf_smolvla_merge_job.py",
     flavor=FLAVOR, timeout="3h",
     env={"SOURCES": json.dumps(sources), "BASE_POLICY": BASE_POLICY, "POLICY_REPO": POLICY_REPO,
-         "STEPS": str(STEPS), "BATCH": str(BATCH), "JOB_NAME": POLICY_REPO.split("/")[1]},
+         "STEPS": str(STEPS), "BATCH": str(BATCH), "JOB_NAME": POLICY_REPO.split("/")[1],
+         **({"GRIP_SQUEEZE_DEG": os.environ["GRIP_SQUEEZE_DEG"]} if os.environ.get("GRIP_SQUEEZE_DEG") else {})},
     secrets={"HF_TOKEN": get_token()},
 )
 print(f"job {job.id} ({FLAVOR}, {STEPS} steps): {job.url}")

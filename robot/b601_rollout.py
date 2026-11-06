@@ -71,6 +71,12 @@ SET_DOWN_POSE = {"shoulder_pan": 52.2, "shoulder_lift": -109.2, "elbow_flex": -6
 SET_DOWN_SLOW_DEG_S = 4.0     # the last 15 mm
 SET_DOWN_CONTACT_LAG_DEG = 4.0  # a big joint this far behind its setpoint on the way down = the plate is on the table
 GRIP_OPEN_DEG = -324.0
+# Grasp squeeze: a gripper command at the plate's width goes out GRIP_SQUEEZE_DEG further closed (never past
+# GRIP_MAX_CLOSE_DEG), as agent.py does after contact; the 1.0 Nm hold cap then sets the force. v5/v6 command an
+# absolute ~-250 learned from the demos (which carried only ~3 deg past the jaws), so a plate that met the jaws a
+# little wider was not squeezed and stayed on the pad (v6 trials 1 and 7, 2026-11-06). B601_GRIP_SQUEEZE=0: off.
+GRIP_SQUEEZE_DEG = float(os.environ.get("B601_GRIP_SQUEEZE", "8"))
+GRIP_MAX_CLOSE_DEG = -240.0
 STATUS_EVERY_S = 1.0          # status line (time, joints, gripper) in the log this often
 FRAME_EVERY_S = 5.0           # wrist frame saved to logs/frames_<time>/ this often during a run
 FRAMES_DIR = None             # set by cmd_run
@@ -346,6 +352,10 @@ def patch_follower(check_only: bool = False) -> None:
 
     def send_action(self, action):
         """Once a second: elapsed time, measured joints and the gripper command, so a log shows how far a run got."""
+        g_cmd = action.get("gripper.pos")
+        if GRIP_SQUEEZE_DEG and g_cmd is not None and HELD_GRIPPER_RANGE[0] <= float(g_cmd) <= HELD_GRIPPER_RANGE[1]:
+            action = {**action, "gripper.pos": max(float(g_cmd), min(float(g_cmd) + GRIP_SQUEEZE_DEG,
+                                                                     GRIP_MAX_CLOSE_DEG))}
         sent = orig_send(self, action)
         if "gripper.pos" in action:  # set_down_held: did the run end with the jaws closing on the plate?
             self._b601_last_grip_cmd = float(action["gripper.pos"])
