@@ -1,0 +1,39 @@
+# Policy server on the Jetson. The robot PC connects over the LAN: tcp/<jetson-ip>:7447.
+# Same contract as touch/remote/server.yaml (robot PC); only the model path and listen address differ.
+# The checkpoint directory (mounted at /opt/b601/checkpoint) is chr1sa/smolvla_plate_random_v3 at
+# 2017a56e with config.json corrected to the 7-value state it was trained on.
+deployment: b601_plate
+model:
+  repo_or_path: /opt/b601/checkpoint
+  revision: null
+  device: cuda
+execution:
+  supported_modes: [chunk]
+  action_fps: 10.0
+  action_deadline_s: 5.0
+  idle_timeout_s: 10.0
+  warmup_calls: 2
+language:
+  enabled: false
+zenoh:
+  mode: peer
+  listen_endpoints: [tcp/0.0.0.0:7447]
+semantics: b601-follower-units-v1
+robot_type: rebot_b601_rs
+features:
+  - name: observation.state
+    shape: [7]
+    dtype: float32
+    names: [shoulder_pan.pos, shoulder_lift.pos, elbow_flex.pos, wrist_flex.pos, wrist_yaw.pos, wrist_roll.pos, gripper.pos]
+    semantics: b601-follower-units-v1
+  - name: observation.images.camera1
+    shape: [200, 320, 3]
+    dtype: uint8
+    kind: rgb
+    semantics: rgb-wrist-oak-v1
+action_feature:
+  name: action
+  shape: [7]
+  dtype: float32
+  names: [shoulder_pan.pos, shoulder_lift.pos, elbow_flex.pos, wrist_flex.pos, wrist_yaw.pos, wrist_roll.pos, gripper.pos]
+  semantics: b601-follower-units-v1

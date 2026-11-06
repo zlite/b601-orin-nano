@@ -1,0 +1,52 @@
+{
+  "leader_id": "so101_leader",
+  "follower_id": "b601_rs",
+  "created": "2026-10-16T16:59:55-0700",
+  "method": "rest offsets + per-joint signs",
+  "joints": {
+    "shoulder_pan": {
+      "scale": -1.0,
+      "offset": 6.483253568994733
+    },
+    "shoulder_lift": {
+      "scale": -1.0,
+      "offset": -100.32965423265307
+    },
+    "elbow_flex": {
+      "scale": 1.0,
+      "offset": -96.4615223645212
+    },
+    "wrist_flex": {
+      "scale": 1.0,
+      "offset": -47.230763865652655
+    },
+    "wrist_roll": {
+      "scale": -1.0,
+      "offset": 16.416697038552762
+    },
+    "gripper": {
+      "scale": -6.154013598019643,
+      "offset": 357.55852174161635
+    }
+  },
+  "rest": {
+    "leader": {
+      "shoulder_pan": 5.230769230769231,
+      "shoulder_lift": -100.26373626373626,
+      "elbow_flex": 96.3956043956044,
+      "wrist_flex": 47.20879120879121,
+      "wrist_roll": 12.263736263736265,
+      "gripper": 58.28377230246389
+    },
+    "follower": {
+      "shoulder_pan": 1.2524843382255015,
+      "shoulder_lift": -0.06591796891680794,
+      "elbow_flex": -0.06591796891680794,
+      "wrist_flex": -0.021972656861444863,
+      "wrist_yaw": -0.3295898445840397,
+      "wrist_roll": 4.152960774816499,
+      "gripper": -1.1206055516270144
+    }
+  },
+  "leader_gripper_open": 98.72557349192863
+}

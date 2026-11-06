@@ -1,0 +1,46 @@
+B601 transfer from the robot PC (2026-11-02)
+============================================
+
+1. calibration/
+   calibration/robots/rebot_b601_follower/b601_rs.json   <- the follower calibration (robot id b601_rs)
+   Copy to ~/.cache/huggingface/lerobot/calibration/robots/rebot_b601_follower/
+   (calibration/teleoperators/ holds the SO-101 leader files; only needed for teleop.)
+
+2. Rollout command: THERE ISN'T ONE.
+   The policy (chr1sa/smolvla_plate_random_v3) has never been run on the arm, and no lerobot-record /
+   rollout command exists in the shell history. The training data was NOT recorded with lerobot-record:
+   touch/agent.py (a scripted pick/place controller) drove the arm and touch/record.py wrote frames
+   straight into a LeRobotDataset. The equivalent settings a rollout must reproduce:
+
+   Robot (from robot.sh / robot.env):
+     --robot.type=rebot_b601_follower --robot.motor_family=rs --robot.port=can0 --robot.id=b601_rs
+     --robot.max_relative_target=5
+   Task text (exact, as trained):
+     "pick up the 96-well plate and put it down somewhere else on the table"
+     (a second task in the dataset: "put the 96-well plate in the holder")
+   Rate: 10 fps. Chunk: 50 actions (5 s).
+   State/action: 7 values, degrees, order
+     shoulder_pan, shoulder_lift, elbow_flex, wrist_flex, wrist_yaw, wrist_roll, gripper  (.pos)
+   Image key in the dataset: observation.images.wrist (the policy server renames to camera1).
+
+   GRIPPER CAVEAT: the gripper runs -325..0 deg. With the jaws open past -180 the motor reading can wrap
+   by +360 after a disable/enable (-322 reads as +38). agent.py corrects this (install_gripper_unwrap,
+   set_grip_frame, GRIP_WRAP_DEG=20). A plain LeRobot rollout does not, and would see a bogus gripper
+   state. Check the gripper reading is in -345..+20 before enabling, and if > +20 subtract 360.
+
+3. Cameras
+   This PC used a LeRobot camera plugin, included in camera_plugin/lerobot_camera_oak
+   (pip install -e camera_plugin/lerobot_camera_oak ; needs depthai). It registers --robot.cameras type "oak":
+     {wrist: {type: oak, device_id: "19443010A13F095A00", socket: CAM_B, width: 640, height: 400, fps: 30, encoding: mjpeg},
+      overview: {type: oak, device_id: "19443010A155785A00", socket: CAM_A, width: 640, height: 480, rotation: 0, fps: 30, encoding: mjpeg}}
+   The policy only uses the wrist camera (OAK-D-SR, MXID 19443010A13F095A00).
+
+   How the TRAINING images were made (match this at inference):
+     agent.py opens the OAK-D-SR directly with depthai: CAM_B (left colour sensor), 640x400,
+     ImgFrame.Type.BGR888i, 15 fps (plus stereo depth on CAM_B/CAM_C for its own perception).
+     record.py then: cv2.resize(img, (320, 200), interpolation=cv2.INTER_AREA), then BGR -> RGB.
+   So the policy input is a 320x200 RGB uint8 image of the full CAM_B frame, uncropped.
+   The OAK "USB ID before start" behaviour is normal: depthai boots the device on open.
+
+reference/   robot.sh, robot.env, agent.py (WristCamera class ~line 333, safety checks, gripper unwrap),
+             record.py (dataset writer), perceive.py (camera/depth helpers). For reading, not running as-is.

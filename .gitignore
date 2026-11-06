@@ -1,0 +1,32 @@
+# Large / generated: kept local (models are on the HF Hub, datasets uploaded by training/launch.py)
+checkpoint/
+checkpoint_v*/
+logs/
+touch/data/lerobot/
+*.zip
+# timestamped debug captures and their poses (thousands of files)
+touch/data/*_[0-9][0-9][0-9][0-9][0-9][0-9]*
+touch/data/*.out
+touch/data/*.txt
+touch/data/*.log
+touch/data/*.jpg
+touch/data/*.bak*
+touch/data/agent_before_*.py
+# runtime logs and state
+touch/*.out
+touch/log.txt
+touch/*.log
+touch/trials*.jsonl
+touch/collect_goal.json
+training/progress_cache.txt
+training/.done_*
+training/last_job.json
+# python / editor
+__pycache__/
+*.pyc
+.venv/
+*.swp
+# secrets
+.env
+*.token
+touch/status.json

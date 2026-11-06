@@ -1,0 +1,26 @@
+[
+ {
+  "time": "2026-10-17 14:03:43",
+  "pad_gap_px": 210.0,
+  "pad_gap_after_lift_px": 217.0,
+  "held": true,
+  "fingertip_tag_mm": [
+   -86.9,
+   32.8,
+   11.1
+  ],
+  "contact_up_mm": 2.0000000000000036
+ },
+ {
+  "time": "2026-10-18 12:14:58",
+  "pad_gap_px": 216.0,
+  "pad_gap_after_lift_px": 204.0,
+  "held": true,
+  "fingertip_tag_mm": [
+   -89.4,
+   31.6,
+   11.0
+  ],
+  "contact_up_mm": null
+ }
+]

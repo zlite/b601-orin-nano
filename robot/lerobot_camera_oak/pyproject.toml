@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lerobot_camera_oak"
+version = "0.1.0"
+description = "Luxonis OAK (DepthAI v3) camera plugin for LeRobot"
+requires-python = ">=3.10"
+dependencies = ["depthai>=3.0,<4", "opencv-python-headless", "numpy"]
+
+[tool.setuptools]
+packages = ["lerobot_camera_oak"]
