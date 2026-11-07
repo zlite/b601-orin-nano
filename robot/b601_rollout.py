@@ -54,6 +54,7 @@ PARK_SPEED_DEG_S = 20.0
 PARK_TOL_DEG = 4.0            # every arm joint within this of the start pose
 PARK_GRIPPER_TOL_DEG = 15.0
 PARK_TIMEOUT_S = 20.0
+PARK_GRIP_WAIT_DEG = 20.0     # park closes the jaws only once every arm joint is this close to the start pose
 RELEASE_WAIT_S = 60.0         # not parked: keep holding this long for someone to support the arm
 # A run that ends with the plate in the jaws: park could not close them (stalled at -242, the plate's width), timed
 # out, and torque-off dropped the plate by the rest pose (2026-11-05 trial 5). Now it is set down on the pad first:
@@ -252,7 +253,13 @@ def patch_follower(check_only: bool = False) -> None:
         while time.monotonic() < t_end:
             present = self._present_pos()
             step = PARK_SPEED_DEG_S * dt
+            # jaws wait until the arm is near the start pose, i.e. lifted clear of the table: closing them where the
+            # run ended shut them on a plate lying between open jaws, park stalled at -242 and the torque-off
+            # lost the plate (v6sq trial 10, 2026-11-06)
+            arm_far = max(abs(present[k] - target[k]) for k in target if k != "gripper") > PARK_GRIP_WAIT_DEG
             for k, goal in target.items():
+                if k == "gripper" and arm_far:
+                    continue
                 d = goal - setpoint[k]
                 st = GRIP_MOVE_DEG_S * dt if k == "gripper" else step
                 setpoint[k] += max(-st, min(st, d))
