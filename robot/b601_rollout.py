@@ -78,6 +78,16 @@ GRIP_OPEN_DEG = -324.0
 # little wider was not squeezed and stayed on the pad (v6 trials 1 and 7, 2026-11-06). B601_GRIP_SQUEEZE=0: off.
 GRIP_SQUEEZE_DEG = float(os.environ.get("B601_GRIP_SQUEEZE", "8"))
 GRIP_MAX_CLOSE_DEG = -240.0
+# End the run once the plate has been carried and let go: after a release the policy sometimes grasped the plate
+# again and held it to the time limit (v6sq trial 10, v6sq2 trial 10). A carry = jaws in HELD_GRIPPER_RANGE for
+# END_CARRY_MIN_S; a release = jaws open past END_OPEN_DEG with shoulder_pan END_MIN_PAN_DEG or more from where the
+# grasp closed (pad pan ~50-60, holder ~36-43; a re-grasp in place does not move it). The run stops END_RETREAT_S
+# later (SIGINT: lerobot-rollout's graceful shutdown, then the usual set-down check and park). B601_END_ON_RELEASE=0: off.
+END_ON_RELEASE = os.environ.get("B601_END_ON_RELEASE", "1") != "0"
+END_CARRY_MIN_S = 3.0
+END_OPEN_DEG = -290.0
+END_MIN_PAN_DEG = 8.0
+END_RETREAT_S = 4.0
 STATUS_EVERY_S = 1.0          # status line (time, joints, gripper) in the log this often
 FRAME_EVERY_S = 5.0           # wrist frame saved to logs/frames_<time>/ this often during a run
 FRAMES_DIR = None             # set by cmd_run
@@ -355,7 +365,33 @@ def patch_follower(check_only: bool = False) -> None:
     def get_observation(self):
         obs = orig_get_obs(self)
         self._b601_obs = obs
+        if END_ON_RELEASE:
+            watch_release(self, obs)
         return obs
+
+    def watch_release(self, obs):
+        now = time.monotonic()
+        g, pan = float(obs.get("gripper.pos", float("nan"))), float(obs.get("shoulder_pan.pos", float("nan")))
+        st = self.__dict__.setdefault("_b601_rel", {"since": None, "pan0": None, "carried": False, "stop_at": None})
+        if st["stop_at"] is not None:
+            if now >= st["stop_at"] and not st.get("sent"):
+                st["sent"] = True
+                print("[b601] ending the run: the plate was carried and released", flush=True)
+                import signal
+                os.kill(os.getpid(), signal.SIGINT)
+            return
+        if HELD_GRIPPER_RANGE[0] <= g <= HELD_GRIPPER_RANGE[1]:
+            if st["since"] is None:
+                st["since"], st["pan0"] = now, pan
+            if now - st["since"] >= END_CARRY_MIN_S:
+                st["carried"] = True
+        elif g < END_OPEN_DEG:
+            if st["carried"] and abs(pan - st["pan0"]) >= END_MIN_PAN_DEG:
+                print(f"[b601] released after a carry (pan {st['pan0']:.1f} -> {pan:.1f}): ending in "
+                      f"{END_RETREAT_S:.0f} s", flush=True)
+                st["stop_at"] = now + END_RETREAT_S
+            else:
+                st["since"], st["carried"] = None, False
 
     def send_action(self, action):
         """Once a second: elapsed time, measured joints and the gripper command, so a log shows how far a run got."""

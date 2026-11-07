@@ -76,6 +76,10 @@ while (( tries[holder] < N || tries[table] < N )); do
     elif (( tries[holder] <= tries[table] )); then task=holder
     else task=table; fi
     if [[ $task == holder && $loc == holder ]]; then out=$(A kpick rand); fi
+    # a pad start outside the demos' pad goals (x 322-451, y 350-396 mm) gets a fresh random place first: a set-down
+    # at (427, 302) was pushed off the pad with open jaws (v6sq2 trial 11, 2026-11-07)
+    if [[ $task == holder && $loc == pad ]] && (( ${x%.*} < 325 || ${x%.*} > 450 || ${y%.*} < 348 || ${y%.*} > 398 )); then
+        say "  plate at ($x, $y) is outside the demos' pad starts: re-placing it"; out=$(A kpick rand); fi
     if [[ $task == table && $loc == pad ]]; then out=$(A kpick home); fi
     if [[ -n ${out:-} ]]; then
         if echo "$out" | grep -q "let it cool"; then say "  shoulder warm: cooling 5 min"; A rest >/dev/null; sleep 300; A clear >/dev/null; continue; fi
